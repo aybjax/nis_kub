@@ -1,0 +1,47 @@
+_format_version: '3.0'
+services:
+    - host: students
+      port: 8080
+      name: student-service
+      path: /api/students
+      routes:
+          - name: student-service-routes
+            paths:
+                - /api/students
+            strip_path: true
+    - host: courses
+      port: 8080
+      name: course-service
+      path: /api/courses
+      routes:
+          - name: course-service-routes
+            paths:
+                - /api/courses
+            strip_path: true
+
+# consumers:
+#     - username: aybjax
+#       custom_id: aybjax_id
+
+# keyauth_credentials:
+#     - consumer: aybjax
+#       ttl: 0
+#       tags:
+#           - only user
+#       key: T09QUyEhISBGb3VuZCBtZTopIEkgQU0gUFJPVUQgT0YgWU9V
+
+# plugins:
+    # - name: prometheus
+    #   config:
+    #       per_consumer: true
+    #       status_code_metrics: true
+    #       latency_metrics: true
+    #       bandwidth_metrics: true
+    #       upstream_health_metrics: true
+
+    # - name: key-auth
+    #   config:
+    #       key_names:
+    #           - apikey
+    #           - X-API-KEY
+    #       key_in_query: false

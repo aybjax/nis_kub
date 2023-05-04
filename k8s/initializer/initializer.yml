@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: initializer-deployment
+    labels:
+        app: initializer
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: initializer
+    template:
+        metadata:
+            labels:
+                app: initializer
+        spec:
+            containers:
+                - name: initializer
+                  image: aybjax/initializer
+                  ports:
+                      - containerPort: 6379
+                  env:
+                      - name: NATS_URL
+                        valueFrom:
+                            configMapKeyRef:
+                                name: nats-config
+                                key: nats-url
+                      - name: NATS_PORT
+                        value: '4222'

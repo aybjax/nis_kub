@@ -1,0 +1,11 @@
+export REDIS_URL=localhost
+export REDIS_PORT=6379
+export NATS_URL=localhost
+export NATS_PORT=4222
+export POSTGRES_USER=user
+export POSTGRES_PASSWORD=password
+export POSTGRES_URL=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_DB=nis
+export GRPC_COURSE_URL=localhost
+export GRPC_COURSE_PORT=50052

@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kong-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # konghq.com/strip-path: "true"
+    konghq.com/plugins: key-auth,prometheus
+spec:
+  ingressClassName: kong
+  rules:
+  - http:
+      paths:
+      - path: /api/students
+        pathType: Prefix
+        backend:
+          service:
+            name: students-service
+            port:
+              number: 8000
+      - path: /api/courses
+        pathType: Prefix
+        backend:
+          service:
+            name: courses-service
+            port:
+              number: 8000

@@ -1,0 +1,21 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongPlugin
+metadata:
+  name: key-auth
+config:
+  key_names:
+    - apikey
+    - X-API-KEY
+  key_in_query: false
+plugin: key-auth
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: aybjax
+  annotations:
+    kubernetes.io/ingress.class: kong
+username: aybjax
+custom_id: aybjax_id
+credentials:
+  - aybjax-password

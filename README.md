@@ -84,6 +84,16 @@
     30. ```kubectl port-forward deployment.apps/grafana 3000```
     31. ```kubectl port-forward deployment.apps/kong-kong 8000```
     32. ```echo -e "Grafana password is:\n$GRAFANA_PASS\n"```: username is _admin_
-  - You can also use minikube tunnels for API Gateways
-  - **NB** you can also apply directories, not each file
-- Prometheus/Loki/Fluent bit/Grafana results:
+    - You can also use minikube tunnels for controllers
+    - **NB** you can also apply directories, not each file
+- Prometheus/Grafana results:
+  - Request were sent to kubernetes clusters. Clusters were first uncached, then cached, then cached with 3 pods of **stateless deployments**.
+    - Only students show improvement: [no cache](https://aybjax.grafana.net/dashboard/snapshot/3znUun4cuFTDx53YtAjy2OCrmL2HVwjz) / [cached](https://aybjax.grafana.net/dashboard/snapshot/nEIQUuwybCTCIClTJpLioXUUbPsDFAsC) / [cached + 3 pods](https://aybjax.grafana.net/dashboard/snapshot/f1XHDJ0vlpcbx64557hclDwxKXQKTeRB)
+    - Courses show regress: [no cache](https://aybjax.grafana.net/dashboard/snapshot/v0F7SaLWJTvITcS2fFeclRWwjJ8k7glm) / [cached](https://aybjax.grafana.net/dashboard/snapshot/ohk42O6s7miO5J5c8olN6F10G2Av5Jbd) / [cached + 3 pods](	https://aybjax.grafana.net/dashboard/snapshot/vEJzgfM9hO4eqAWMZ186CBztA2S43BMO)
+    - If looked at overall requests, it gives mixed results: [no cache](https://aybjax.grafana.net/dashboard/snapshot/QGoLf7bfKP0N5dkg2p4HIAGRXC6wb2dh) / [cached](https://aybjax.grafana.net/dashboard/snapshot/fuxjBBBwWlLHVmfQmA7Gs9FD75Bs2cxF) / [cached + 3 pods](https://aybjax.grafana.net/dashboard/snapshot/975dG1l61GEuCkyh9iRCktP6Kc7uJT0a)
+  - Loki/Fluent bit/Grafana results:
+    - If we look at logs, then we see that request to [Courses.GetStudents HTTP request](https://aybjax.grafana.net/dashboard/snapshot/G0m5lQnGZPUvQjNHyKeaTdHi0mJKPH0g) is immediately followed by [Students.GetStudents GRPC request](https://aybjax.grafana.net/dashboard/snapshot/ooeTFVIsRooXWFtqqyMdd2WqKossQdN5). [Here](https://user-images.githubusercontent.com/20273037/236185209-51d1d2e3-4c38-4b1c-841d-ce40e10324cb.jpg) is another example.
+  - **NB** There might be different reasons why caching and scaling did not improve.
+    1. **Limited resource of the my PC**. Scaling pods means less resource is allocated to each pod. Maybe testing in cloud environment could have given logical results
+    2. **DB/Cache bottleneck**. I did not use/scale StatefulSets. So increasing pod number may be veil if stateful data storage is not increase. Anyways, Stateful state only scales read pods, so increasing DB/Cache pods may not be that effective if there are more mutating requests.
+.

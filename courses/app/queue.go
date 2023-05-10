@@ -10,38 +10,58 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type Queue struct {
+const (
+	_QUEUE_CHANNEL_TO_MODIFY            = "course.to_modify"
+	_QUEUE_TOPIC_TO_MODIFY              = ""
+	_QUEUE_TOPIC_COURSE_TO_MODIFY_QUEUE = "COURSE_TO_MODIFY_QUEUE"
+	_QUEUE_CHANNEL_COURSE_MODIFIED      = "course.modified"
+	_QUEUE_TOPIC_COURSE_MODIFIED        = ""
+	_QUEUE_CHANNEL_STUDENT_MODIFIED     = "student.modified"
+	_QUEUE_TOPIC_STUDENT_MODIFIED       = "STUDENT_MODIFIED_QUEUE"
+)
+
+//go:generate mockgen -source=./queue.go -destination=./mock_app/mock_queue.go
+
+type Queue interface {
+	EnqueueTransformNotify(queueMsg *pbdto.DiffIds) error
+	TransformNotifyListener(cb func(context.Context, *pbdto.DiffIds) error)
+	NotifyCourseChanged(update *pbdto.UpdateEmbedded) error
+	StudentChangedListener(cb func(ctx context.Context, update *pbdto.UpdateEmbedded) error)
+}
+
+type QueueImpl struct {
 	client cmntypes.AppQueue
 }
 
-func NewQueue(engine cmntypes.AppQueue) *Queue {
-	return &Queue{engine}
+func NewQueue(engine cmntypes.AppQueue) Queue {
+	return &QueueImpl{engine}
 }
 
-func (q *Queue) EnqueueTransformNotify(queueMsg *pbdto.DiffIds) error {
+func (q *QueueImpl) EnqueueTransformNotify(queueMsg *pbdto.DiffIds) error {
 	msg, err := proto.Marshal(queueMsg)
 
 	if err != nil {
 		return err
 	}
 
-	return q.client.Publish(msg, "course.to_modify", "")
+	return q.client.Publish(msg, _QUEUE_CHANNEL_TO_MODIFY, _QUEUE_TOPIC_TO_MODIFY)
 }
 
-func (q *Queue) TransformNotifyListener(cb func(context.Context, *pbdto.DiffIds) error) {
-	q.client.Subscribe("course.to_modify", "COURSE_TO_MODIFY_QUEUE", func(data []byte) error {
+func (q *QueueImpl) TransformNotifyListener(cb func(context.Context, *pbdto.DiffIds) error) {
+	q.client.Subscribe(_QUEUE_CHANNEL_TO_MODIFY, _QUEUE_TOPIC_COURSE_TO_MODIFY_QUEUE, func(data []byte) error {
 		diffIds := &pbdto.DiffIds{}
 
 		proto.Unmarshal(data, diffIds)
 
+		// TODO test this
 		if diffIds.Id == "" {
 			return errors.New("Empty data")
 		}
 
 		if err := cb(context.Background(), diffIds); err != nil {
 			return fmt.Errorf("Could not derialize from %s:%s, data is %s",
-				"course.to_modify",
-				"COURSE_TO_MODIFY_QUEUE",
+				_QUEUE_CHANNEL_TO_MODIFY,
+				_QUEUE_TOPIC_COURSE_TO_MODIFY_QUEUE,
 				data)
 		}
 
@@ -49,18 +69,19 @@ func (q *Queue) TransformNotifyListener(cb func(context.Context, *pbdto.DiffIds)
 	})
 }
 
-func (q *Queue) NotifyCourseChanged(update *pbdto.UpdateEmbedded) error {
+// TODO add context as arg
+func (q *QueueImpl) NotifyCourseChanged(update *pbdto.UpdateEmbedded) error {
 	bs, err := proto.Marshal(update)
 
 	if err != nil {
 		return err
 	}
 
-	return q.client.Publish(bs, "course.modified", "")
+	return q.client.Publish(bs, _QUEUE_CHANNEL_COURSE_MODIFIED, _QUEUE_TOPIC_COURSE_MODIFIED)
 }
 
-func (q *Queue) StudentChangedListener(cb func(ctx context.Context, update *pbdto.UpdateEmbedded) error) {
-	q.client.Subscribe("student.modified", "STUDENT_MODIFIED_QUEUE", func(data []byte) error {
+func (q *QueueImpl) StudentChangedListener(cb func(ctx context.Context, update *pbdto.UpdateEmbedded) error) {
+	q.client.Subscribe(_QUEUE_CHANNEL_STUDENT_MODIFIED, _QUEUE_TOPIC_STUDENT_MODIFIED, func(data []byte) error {
 		updateEmbedded := &pbdto.UpdateEmbedded{}
 
 		if err := proto.Unmarshal(data, updateEmbedded); err != nil {

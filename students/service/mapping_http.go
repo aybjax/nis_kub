@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/aybjax/nis_lib/pbdto"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func decodeEmptyRequest(_ context.Context, r *http.Request) (interface{}, error) {

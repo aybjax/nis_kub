@@ -13,13 +13,13 @@ import (
 )
 
 type ServiceInstance struct {
-	db         *app_db.DB
+	db         app_db.DB
 	grpcClient pbdto.GetStudentCoursesClient
-	queue      *app.Queue
+	queue      app.Queue
 	logger     log.Logger
 }
 
-func NewService(db *app_db.DB, grpcClient pbdto.GetStudentCoursesClient, queue *app.Queue, logger log.Logger,
+func NewService(db app_db.DB, grpcClient pbdto.GetStudentCoursesClient, queue app.Queue, logger log.Logger,
 ) app.StudentService {
 	s := &ServiceInstance{
 		db:         db,
@@ -95,7 +95,7 @@ func (s *ServiceInstance) GetCourses(ctx context.Context, id string) ([]*pbdto.C
 			"method", "GetCourses",
 			"err", fmt.Sprint(err),
 		)
-		return nil, err
+		return nil, helper.NewMapError(err)
 	}
 
 	return resp.Courses, nil

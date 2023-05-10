@@ -13,14 +13,14 @@ import (
 )
 
 type ServiceInstance struct {
-	db         *app_db.DB
+	db         app_db.DB
 	grpcClient pbdto.GetCourseStudentsClient
-	queue      *app.Queue
+	queue      app.Queue
 	logger     log.Logger
 }
 
-func NewService(db *app_db.DB,
-	grpcClient pbdto.GetCourseStudentsClient, queue *app.Queue, logger log.Logger,
+func NewService(db app_db.DB,
+	grpcClient pbdto.GetCourseStudentsClient, queue app.Queue, logger log.Logger,
 ) app.CourseService {
 	s := &ServiceInstance{
 		db:         db,

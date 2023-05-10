@@ -11,13 +11,13 @@ import (
 )
 
 type CacheMiddleware struct {
-	cache  *app.Cache
-	db     *app_db.DB
+	cache  app.Cache
+	db     app_db.DB
 	next   app.StudentService
 	logger log.Logger
 }
 
-func NewCacheMiddleware(next app.StudentService, cache *app.Cache, db *app_db.DB, logger log.Logger) app.StudentService {
+func NewCacheMiddleware(next app.StudentService, cache app.Cache, db app_db.DB, logger log.Logger) app.StudentService {
 	return &CacheMiddleware{
 		cache:  cache,
 		db:     db,

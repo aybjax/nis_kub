@@ -22,7 +22,7 @@ import (
 
 type GRPCClientClose func() error
 
-func NewDB(logger log.Logger) (*app_db.DB, error) {
+func NewDB(logger log.Logger) (app_db.DB, error) {
 	var db *sql.DB
 	{
 		var err error

@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"nis_students/app"
+
 	"github.com/aybjax/nis_lib/pbdto"
 	"github.com/go-kit/kit/endpoint"
-	"nis_students/app"
 )
 
 func makeGetStudentsEndpoint(svc app.StudentService) endpoint.Endpoint {
@@ -55,16 +55,6 @@ func makeGetCoursesEndpoint(svc app.StudentService) endpoint.Endpoint {
 		return map[string]interface{}{
 			"data": courses,
 		}, err
-	}
-}
-
-func MakeGetCoursesEndpoint(svc app.StudentService) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(string)
-
-		fmt.Printf("%#v\n", req)
-
-		return "All data", nil
 	}
 }
 

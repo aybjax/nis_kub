@@ -13,19 +13,33 @@ import (
 
 var GET_ALL_ERROR = errors.New("could not retrieve all data")
 
-type DB struct {
+//go:generate mockgen -source=./db.go -destination=./mock_app_db/mock_db.go
+type DB interface {
+	Close() error
+	ReadAll() ([]*pbdto.Student, error)
+	ReadById(id string) (*pbdto.Student, error)
+	ReadByCourseId(course_id string) ([]*pbdto.Student, error)
+	Create(payload *pbdto.Student) (string, []string, error)
+	Update(id string, payload *pbdto.Student) ([]string, []string, error)
+	Delete(id string) ([]string, error)
+	AddCourseIdTo(id string, courseId string) (bool, error)
+	DeleteCourseIdFrom(id string, courseId string) (bool, error)
+	GetCourseIds(id string) ([]string, error)
+}
+
+type DBImpl struct {
 	client *sql.DB
 	logger log.Logger
 }
 
-func NewAppDB(client *sql.DB, logger log.Logger) *DB {
-	return &DB{
+func NewAppDB(client *sql.DB, logger log.Logger) DB {
+	return &DBImpl{
 		client: client,
 		logger: logger,
 	}
 }
 
-func (db *DB) Close() error {
+func (db *DBImpl) Close() error {
 	db.logger.Log(
 		"DB.method", "Close",
 		"msg", "closing db",
@@ -33,7 +47,7 @@ func (db *DB) Close() error {
 	return db.client.Close()
 }
 
-func (db *DB) ReadAll() ([]*pbdto.Student, error) {
+func (db *DBImpl) ReadAll() ([]*pbdto.Student, error) {
 	result := make([]*pbdto.Student, 0)
 
 	rows, err := db.client.Query(`
@@ -71,7 +85,7 @@ func (db *DB) ReadAll() ([]*pbdto.Student, error) {
 	return result, err
 }
 
-func (db *DB) ReadById(id string) (*pbdto.Student, error) {
+func (db *DBImpl) ReadById(id string) (*pbdto.Student, error) {
 	var data StudentDB
 
 	err := db.client.QueryRow(`
@@ -92,7 +106,7 @@ func (db *DB) ReadById(id string) (*pbdto.Student, error) {
 	return result, nil
 }
 
-func (db *DB) ReadByCourseId(course_id string) ([]*pbdto.Student, error) {
+func (db *DBImpl) ReadByCourseId(course_id string) ([]*pbdto.Student, error) {
 	result := make([]*pbdto.Student, 0)
 
 	rows, err := db.client.Query(`
@@ -130,7 +144,7 @@ func (db *DB) ReadByCourseId(course_id string) ([]*pbdto.Student, error) {
 	return result, nil
 }
 
-func (db *DB) Create(payload *pbdto.Student) (string, []string, error) {
+func (db *DBImpl) Create(payload *pbdto.Student) (string, []string, error) {
 	data, err := StudentDB{}.FromProto(payload)
 	var id string
 
@@ -169,7 +183,7 @@ func (db *DB) Create(payload *pbdto.Student) (string, []string, error) {
 	return id, data.CourseIds, nil
 }
 
-func (db *DB) Update(id string, payload *pbdto.Student) ([]string, []string, error) {
+func (db *DBImpl) Update(id string, payload *pbdto.Student) ([]string, []string, error) {
 	var oldIds []string
 	var idExist string
 	data, err := StudentDB{}.FromProto(payload)
@@ -221,7 +235,7 @@ func (db *DB) Update(id string, payload *pbdto.Student) ([]string, []string, err
 	return data.CourseIds, oldIds, err
 }
 
-func (db *DB) Delete(id string) ([]string, error) {
+func (db *DBImpl) Delete(id string) ([]string, error) {
 	var oldIds []string
 	var idExist string
 
@@ -252,7 +266,7 @@ func (db *DB) Delete(id string) ([]string, error) {
 	return oldIds, err
 }
 
-func (db *DB) AddCourseIdTo(id string, courseId string) (bool, error) {
+func (db *DBImpl) AddCourseIdTo(id string, courseId string) (bool, error) {
 	var existingId string
 
 	err := db.client.QueryRow(`
@@ -278,7 +292,7 @@ func (db *DB) AddCourseIdTo(id string, courseId string) (bool, error) {
 	return existingId != "", err
 }
 
-func (db *DB) DeleteCourseIdFrom(id string, courseId string) (bool, error) {
+func (db *DBImpl) DeleteCourseIdFrom(id string, courseId string) (bool, error) {
 	var existingId string
 
 	err := db.client.QueryRow(`
@@ -303,7 +317,7 @@ func (db *DB) DeleteCourseIdFrom(id string, courseId string) (bool, error) {
 	return existingId != "", err
 }
 
-func (db *DB) GetCourseIds(id string) ([]string, error) {
+func (db *DBImpl) GetCourseIds(id string) ([]string, error) {
 	var result []string
 
 	err := db.client.QueryRow(`

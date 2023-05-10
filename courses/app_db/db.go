@@ -11,26 +11,40 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type DB struct {
+//go:generate mockgen -source=./db.go -destination=./mock_app_db/mock_db.go
+type DB interface {
+	Close() error
+	ReadAll(ctx context.Context) ([]*pbdto.Course, error)
+	ReadById(ctx context.Context, id string) (*pbdto.Course, error)
+	ReadByStudentId(ctx context.Context, studentId string) ([]*pbdto.Course, error)
+	Create(ctx context.Context, payload *pbdto.Course) (string, []string, error)
+	Update(ctx context.Context, id string, payload *pbdto.Course) ([]string, []string, error)
+	Delete(ctx context.Context, id string) ([]string, error)
+	AddStudentIdTo(ctx context.Context, id string, courseId string) (bool, error)
+	DeleteStudentIdFrom(ctx context.Context, id string, courseId string) (bool, error)
+	GetStudentIds(id string) ([]string, error)
+}
+
+type DBimpl struct {
 	client           *mongo.Client
 	courseCollection *mongo.Collection
 	logger           log.Logger
 }
 
-func NewAppDB(client *mongo.Client, logger log.Logger) *DB {
+func NewAppDB(client *mongo.Client, logger log.Logger) DB {
 	courseCollection := client.Database("testdb").Collection("courses")
 	logger.Log(
 		"DB.method", "NewAppDB",
 		"msg", "courseCollection retrieved",
 	)
-	return &DB{
+	return &DBimpl{
 		client:           client,
 		courseCollection: courseCollection,
 		logger:           logger,
 	}
 }
 
-func (db *DB) Close() error {
+func (db *DBimpl) Close() error {
 	db.logger.Log(
 		"DB.method", "Close",
 		"msg", "closing db",
@@ -38,7 +52,7 @@ func (db *DB) Close() error {
 	return db.client.Disconnect(context.Background())
 }
 
-func (db *DB) ReadAll(ctx context.Context) ([]*pbdto.Course, error) {
+func (db *DBimpl) ReadAll(ctx context.Context) ([]*pbdto.Course, error) {
 	var docs []*CourseDB
 
 	c, err := db.courseCollection.Find(context.TODO(), bson.M{})
@@ -72,7 +86,7 @@ func (db *DB) ReadAll(ctx context.Context) ([]*pbdto.Course, error) {
 	return result, err
 }
 
-func (db *DB) ReadById(ctx context.Context, id string) (*pbdto.Course, error) {
+func (db *DBimpl) ReadById(ctx context.Context, id string) (*pbdto.Course, error) {
 	var data CourseDB
 
 	_id, err := primitive.ObjectIDFromHex(id)
@@ -102,7 +116,7 @@ func (db *DB) ReadById(ctx context.Context, id string) (*pbdto.Course, error) {
 	return result, nil
 }
 
-func (db *DB) ReadByStudentId(ctx context.Context, studentId string) ([]*pbdto.Course, error) {
+func (db *DBimpl) ReadByStudentId(ctx context.Context, studentId string) ([]*pbdto.Course, error) {
 	docs := make([]CourseDB, 0)
 
 	c, err := db.courseCollection.Find(context.TODO(), bson.M{
@@ -129,7 +143,7 @@ func (db *DB) ReadByStudentId(ctx context.Context, studentId string) ([]*pbdto.C
 	return result, nil
 }
 
-func (db *DB) Create(ctx context.Context, payload *pbdto.Course) (string, []string, error) {
+func (db *DBimpl) Create(ctx context.Context, payload *pbdto.Course) (string, []string, error) {
 	data, err := CourseDB{}.FromProto(payload)
 
 	if err != nil {
@@ -166,7 +180,7 @@ func (db *DB) Create(ctx context.Context, payload *pbdto.Course) (string, []stri
 	return id.Hex(), data.StudentIds, nil
 }
 
-func (db *DB) Update(ctx context.Context, id string, payload *pbdto.Course) ([]string, []string, error) {
+func (db *DBimpl) Update(ctx context.Context, id string, payload *pbdto.Course) ([]string, []string, error) {
 	var oldDoc CourseDB
 	_id, err := primitive.ObjectIDFromHex(id)
 
@@ -209,7 +223,7 @@ func (db *DB) Update(ctx context.Context, id string, payload *pbdto.Course) ([]s
 	return data.StudentIds, oldDoc.StudentIds, err
 }
 
-func (db *DB) Delete(ctx context.Context, id string) ([]string, error) {
+func (db *DBimpl) Delete(ctx context.Context, id string) ([]string, error) {
 	var oldDoc CourseDB
 	_id, err := primitive.ObjectIDFromHex(id)
 
@@ -236,7 +250,7 @@ func (db *DB) Delete(ctx context.Context, id string) ([]string, error) {
 	return oldDoc.StudentIds, nil
 }
 
-func (db *DB) AddStudentIdTo(ctx context.Context, id string, courseId string) (bool, error) {
+func (db *DBimpl) AddStudentIdTo(ctx context.Context, id string, courseId string) (bool, error) {
 	var errs []error
 	var exists bool
 	oldData := CourseDB{}
@@ -266,7 +280,7 @@ func (db *DB) AddStudentIdTo(ctx context.Context, id string, courseId string) (b
 	return exists, err
 }
 
-func (db *DB) DeleteStudentIdFrom(ctx context.Context, id string, courseId string) (bool, error) {
+func (db *DBimpl) DeleteStudentIdFrom(ctx context.Context, id string, courseId string) (bool, error) {
 	var errs []error
 	var exists bool
 	oldData := CourseDB{}
@@ -296,7 +310,7 @@ func (db *DB) DeleteStudentIdFrom(ctx context.Context, id string, courseId strin
 	return exists, err
 }
 
-func (db *DB) GetStudentIds(id string) ([]string, error) {
+func (db *DBimpl) GetStudentIds(id string) ([]string, error) {
 	oldData := CourseDB{}
 	_id, _ := primitive.ObjectIDFromHex(id)
 

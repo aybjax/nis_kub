@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
+	"nis_courses/app"
+
 	"github.com/aybjax/nis_lib/pbdto"
 	"github.com/go-kit/kit/endpoint"
-	"nis_courses/app"
 )
 
 func makeGetAllEndpoint(svc app.CourseService) endpoint.Endpoint {

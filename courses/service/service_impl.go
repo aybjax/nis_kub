@@ -138,7 +138,9 @@ func (s *ServiceInstance) Post(ctx context.Context, payload *pbdto.Course) (inte
 		)
 	}
 
-	return id, nil
+	return map[string]interface{}{
+		"id": id,
+	}, nil
 }
 
 func (s *ServiceInstance) Put(ctx context.Context, id string, payload *pbdto.Course) (interface{}, error) {
@@ -167,7 +169,7 @@ func (s *ServiceInstance) Put(ctx context.Context, id string, payload *pbdto.Cou
 		)
 	}
 
-	return id, nil
+	return "OK", nil
 }
 
 func (s *ServiceInstance) Delete(ctx context.Context, id string) (interface{}, error) {
